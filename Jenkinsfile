@@ -38,23 +38,29 @@ pipeline {
          stage('docker build') {
             steps {
              script {
+                 withDockerRegistry(credentialsId: 'docker-key', toolName: 'docker') {
                     sh 'docker build -t java-spring .'
                   }
+              }
             }
         }
          stage('docker push') {
             steps {
              script {
+                withDockerRegistry(credentialsId: 'docker-key', toolName: 'docker') {
                     sh 'docker tag java-spring dockerprabha2001/java-spring'
                     sh 'docker push dockerprabha2001/java-spring'
                   }
+              }
             }
          }    
         stage('docker container') {
             steps {
              script {
+                   withDockerRegistry(credentialsId: 'docker-key', toolName: 'docker') {
                     sh 'docker run -itd --name javaspring-cont -p 8085:8085 java-spring'
                   }
+              }
             }
         }    
     }	
