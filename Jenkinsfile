@@ -1,77 +1,89 @@
-def COLOR_MAP = [
-    'SUCCESS': 'good',
-    'FAILURE': 'danger'
-    ]
 pipeline {
-    agent any
+    agent any 
+    
     tools {
-    maven 'maven'
-  }
-     environment {
-        SCANNER_HOME = tool 'sonarqube'
+        maven 'maven'
     }
+    
+    environment {
+        SCANNER_HOME = tool 'sonarqube-server'
+    }
+
     stages {
+        stage('clean workspace') {
+            steps {
+                cleanWs()
+            }
+        }
+        
         stage('git checkout') {
             steps {
-            git 'https://github.com/githubprabha/Java-Springboot'
+                git 'https://github.com/githubprabha/java_webapplication.git'
             }
         }
-         stage('compile') {
+        
+        stage('compile') {
             steps {
-              sh 'mvn compile'
+                sh 'mvn clean compile'
             }
         }
-         stage('code analysis') {
+
+        stage('code analysis') {
             steps {
-              withSonarQubeEnv('sonarqube') {
-               sh ''' $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=Java-Springboot \
-               -Dsonar.java.binaries=. \
-               -Dsonar.projectKey=Java-Springboot'''
-              }
+                withSonarQubeEnv('sonarqube-scanner') {
+                    sh '''$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=java_webapplication \
+                    -Dsonar.java.binaries=. \
+                    -Dsonar.projectKey=java_webapplication'''
+                }
             }
         }
-        stage('package') {
+        
+        stage('docker-stage-clear') {
             steps {
-              sh 'mvn install'
+                sh 'docker stop $(docker ps -q) || true'
+                sh 'docker rm $(docker ps -aq) || true'
+                sh 'docker rmi $(docker images -q) || true'
             }
         }
-         stage('docker build') {
+
+        stage('docker-image') {
             steps {
-             script {
-                 withDockerRegistry(credentialsId: 'docker-key', toolName: 'docker') {
-                    sh 'docker build -t java-spring .'
-                  }
-              }
+                sh 'docker build -t dockerprabha2001/java-web .'
             }
         }
-         stage('docker push') {
+
+        stage('trivy') {
             steps {
-             script {
-                withDockerRegistry(credentialsId: 'docker-key', toolName: 'docker') {
-                    sh 'docker tag java-spring dockerprabha2001/java-spring'
-                    sh 'docker push dockerprabha2001/java-spring'
-                  }
-              }
+                script {
+                    sh 'trivy image --severity HIGH,CRITICAL -f table -o report.html dockerprabha2001/java-web'
+                }
             }
-         }    
-        stage('docker container') {
+        }
+
+        stage('docker push') {
             steps {
-             script {
-                   withDockerRegistry(credentialsId: 'docker-key', toolName: 'docker') {
-                    sh 'docker run -itd --name javaspring-cont -p 8085:8085 java-spring'
-                  }
-              }
+                script {
+                    withDockerRegistry(credentialsId: 'docker-cred', toolName: 'docker') {
+                        sh 'docker push dockerprabha2001/java-web'
+                    }
+                }
             }
-        }    
-    }	
- 
+        }
+
+        stage('docker-container') {
+            steps {
+                sh 'docker run -itd -p 8081:8080 dockerprabha2001/java-web'
+            }
+        }
+    }
+
     post {
         always {
-            echo 'slack Notification.'
-            slackSend channel: '#all-gp-team4devops',
-            color: COLOR_MAP [currentBuild.currentResult],
-            message: "*${currentBuild.currentResult}:* Job ${env.JOB_NAME} build ${env.BUILD_NUMBER} \n More info at: ${env.BUILD_URl}"
-            
+            echo 'Slack Notification.'
+            slackSend(
+                channel: '#java-ci-cd-pipeline',
+                message: "*${currentBuild.currentResult}:* Job ${env.JOB_NAME} build ${env.BUILD_NUMBER} \n More info at: ${env.BUILD_URL}"
+            )
         }
     }
 }
