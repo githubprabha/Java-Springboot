@@ -55,7 +55,7 @@ pipeline {
         stage('trivy') {
             steps {
                 script {
-                    sh 'trivy image --severity HIGH,CRITICAL -f table -o report.html dockerprabha2001/javaspring'
+                    sh 'trivy image --severity HIGH,CRITICAL -f json -o report.html dockerprabha2001/javaspring'
                 }
             }
         }
