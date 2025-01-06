@@ -79,6 +79,7 @@ pipeline {
 
     post {
         always {
+            archiveArtifacts artifacts: 'report.html', allowEmptyArchive: true
             emailext(
                 subject: "Build Notification: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                 body: """
@@ -87,6 +88,7 @@ pipeline {
                 <p><a href="${env.BUILD_URL}">View Build Details</a></p>
                 """,
                 mimeType: 'text/html',
+                attachmentsPattern: 'report.html',
                 to: 'soulheart2706@gmail.com'
             )
         }
