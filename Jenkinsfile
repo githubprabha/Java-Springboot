@@ -76,13 +76,17 @@ pipeline {
             }
         }
     }
-
+    
     post {
         always {
-            echo 'Slack Notification.'
-            slackSend(
-                channel: '#java-ci-cd-pipeline',
-                message: "*${currentBuild.currentResult}:* Job ${env.JOB_NAME} build ${env.BUILD_NUMBER} \n More info at: ${env.BUILD_URL}"
+            emailext(
+                subject: "Build Notification: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: """
+                <p>The Jenkins job <b>${env.JOB_NAME} #${env.BUILD_NUMBER}</b> has completed.</p>
+                <p>Status: <b>${currentBuild.currentResult}</b></p>
+                <p><a href="${env.BUILD_URL}">View Build Details</a></p>
+                """,
+                to: 'soulheart2706@gmail.com'
             )
         }
     }
