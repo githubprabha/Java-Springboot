@@ -76,7 +76,7 @@ pipeline {
             }
         }
     }
-    
+
     post {
         always {
             emailext(
@@ -86,6 +86,7 @@ pipeline {
                 <p>Status: <b>${currentBuild.currentResult}</b></p>
                 <p><a href="${env.BUILD_URL}">View Build Details</a></p>
                 """,
+                mimeType: 'text/html',
                 to: 'soulheart2706@gmail.com'
             )
         }
