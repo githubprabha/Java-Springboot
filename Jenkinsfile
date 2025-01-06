@@ -18,7 +18,7 @@ pipeline {
         
         stage('git checkout') {
             steps {
-                git 'https://github.com/githubprabha/java_webapplication.git'
+                git 'https://github.com/githubprabha/Java-Springboot.git'
             }
         }
         
@@ -31,9 +31,9 @@ pipeline {
         stage('code analysis') {
             steps {
                 withSonarQubeEnv('sonarqube-scanner') {
-                    sh '''$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=java_webapplication \
+                    sh '''$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=Java-Springboot \
                     -Dsonar.java.binaries=. \
-                    -Dsonar.projectKey=java_webapplication'''
+                    -Dsonar.projectKey=Java-Springboot'''
                 }
             }
         }
@@ -48,14 +48,14 @@ pipeline {
 
         stage('docker-image') {
             steps {
-                sh 'docker build -t dockerprabha2001/java-web .'
+                sh 'docker build -t dockerprabha2001/javaspring .'
             }
         }
 
         stage('trivy') {
             steps {
                 script {
-                    sh 'trivy image --severity HIGH,CRITICAL -f table -o report.html dockerprabha2001/java-web'
+                    sh 'trivy image --severity HIGH,CRITICAL -f table -o report.html dockerprabha2001/javaspring'
                 }
             }
         }
@@ -64,7 +64,7 @@ pipeline {
             steps {
                 script {
                     withDockerRegistry(credentialsId: 'docker-cred', toolName: 'docker') {
-                        sh 'docker push dockerprabha2001/java-web'
+                        sh 'docker push dockerprabha2001/javaspring'
                     }
                 }
             }
@@ -72,7 +72,7 @@ pipeline {
 
         stage('docker-container') {
             steps {
-                sh 'docker run -itd -p 8081:8080 dockerprabha2001/java-web'
+                sh 'docker run -itd -p 8081:8080 dockerprabha2001/javaspring'
             }
         }
     }
